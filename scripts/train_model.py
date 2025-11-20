@@ -1,8 +1,8 @@
 modelName = "speechBaseline4"  # Sheeram's configs
 
 args = {}
-args["outputDir"] = "/Users/andywang/data/brain2speech/logs/speech_logs/" + modelName
-args["datasetPath"] = "/Users/andywang/data/brain2speech/ptDecoder_ctc"
+args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName
+args["datasetPath"] = "/home/andy/data/brain2speech/ptDecoder_ctc"
 args["seqLen"] = 150
 args["maxTimeSeriesLen"] = 1200
 args["batchSize"] = 64  # 128

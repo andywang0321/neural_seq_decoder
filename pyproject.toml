@@ -1,2 +1,49 @@
 [build-system]
 requires = ["setuptools>=46.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neural_decoder"
+version = "0.0.1"
+description = "PyTorch neural sequence decoder for speech BCI (https://github.com/fwillett/speechBCI/tree/main/NeuralDecoder)"
+authors = [
+  { name = "Chaofei Fan", email = "stfan@stanford.edu" },
+  { name = "Frank Willett" },
+]
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.9"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+  # importlib-metadata was only needed for old Python versions;
+  # you can drop this entirely since requires-python >=3.9
+  # "importlib-metadata; python_version < \"3.8\"",
+
+  "torch==1.13.1",
+  "hydra-core==1.3.2",
+  "hydra-submitit-launcher==1.1.5",
+  "hydra-optuna-sweeper==1.2.0",
+  "numpy==1.25.0",
+  "scipy==1.11.1",
+  "numba==0.58.1",
+  "scikit-learn==1.3.2",
+  "g2p_en==2.1.0",
+  "edit_distance==1.0.6",
+]
+
+[project.urls]
+Repository = "https://github.com/fwillett/speechBCI/tree/main/NeuralDecoder"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests", "examples"]
+namespaces = true
+
