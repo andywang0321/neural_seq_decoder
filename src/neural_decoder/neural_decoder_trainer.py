@@ -1,4 +1,5 @@
 import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import pickle
 import time
 
@@ -59,7 +60,7 @@ def trainModel(args):
     os.makedirs(args["outputDir"], exist_ok=True)
     torch.manual_seed(args["seed"])
     np.random.seed(args["seed"])
-    device = "cuda"
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
     with open(args["outputDir"] + "/args", "wb") as file:
         pickle.dump(args, file)

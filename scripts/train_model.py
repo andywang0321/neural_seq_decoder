@@ -1,8 +1,8 @@
 modelName = "speechBaseline4"  # original configs
 
 args = {}
-args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName
-args["datasetPath"] = "/home/andy/data/brain2speech/ptDecoder_ctc"
+args["outputDir"] = "/Users/matthewli/data/brain2speech/logs/speech_logs/" + modelName
+args["datasetPath"] = "/Users/matthewli/data/brain2speech/ptDecoder_ctc"
 args["seqLen"] = 150
 args["maxTimeSeriesLen"] = 1200
 args["batchSize"] = 128 # 64
