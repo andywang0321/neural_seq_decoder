@@ -13,7 +13,7 @@ class GRUDecoder(nn.Module):
         layer_dim,
         nDays=24,
         dropout=0,
-        device="mps",
+        device="cuda",
         strideLen=4,
         kernelLen=14,
         gaussianSmoothWidth=0,

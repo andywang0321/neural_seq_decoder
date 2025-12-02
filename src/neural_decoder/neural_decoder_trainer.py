@@ -60,7 +60,7 @@ def trainModel(args):
     os.makedirs(args["outputDir"], exist_ok=True)
     torch.manual_seed(args["seed"])
     np.random.seed(args["seed"])
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    device = torch.device("cuda")
 
     with open(args["outputDir"] + "/args", "wb") as file:
         pickle.dump(args, file)
