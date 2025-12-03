@@ -81,6 +81,12 @@ def trainModel(args):
         kernelLen=args["kernelLen"],
         gaussianSmoothWidth=args["gaussianSmoothWidth"],
         bidirectional=args["bidirectional"],
+        whiteNoiseSD=args["whiteNoiseSD"],
+        constantOffsetSD=args["constantOffsetSD"],
+        timeMask_maxWidth=args["timeMask_maxWidth"],
+        timeMask_nMasks=args["timeMask_nMasks"],
+        timeMask_p=args["timeMask_p"],
+
     ).to(device)
 
     loss_ctc = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)

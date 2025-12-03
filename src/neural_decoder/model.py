@@ -96,11 +96,10 @@ class GRUDecoder(nn.Module):
 
     def forward(self, neuralInput, dayIdx):
         # print("neuralInput before smoothing:", neuralInput.shape)
-
-        neuralInput = self.whiteNoise(neuralInput)
-        neuralInput = self.meanDriftNoise(neuralInput)
-        
-        neuralInput = self.timeMask(neuralInput)
+        if self.training:
+            neuralInput = self.whiteNoise(neuralInput)
+            neuralInput = self.meanDriftNoise(neuralInput)
+            neuralInput = self.timeMask(neuralInput)
         
         neuralInput = torch.permute(neuralInput, (0, 2, 1))
         neuralInput = self.gaussianSmoother(neuralInput)
