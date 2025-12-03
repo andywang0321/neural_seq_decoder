@@ -4,7 +4,44 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+class TimeMasking(nn.Module):
+    """
+    Randomly masks contiguous time steps in each sequence.
+    Expects input of shape (B, T, F).
 
+    Args:
+        max_width: maximum width (in time steps) of each mask.
+        n_masks: number of masked segments per sequence.
+        p: probability of applying this augmentation at all.
+        mask_value: what to put in the masked region.
+    """
+    def __init__(self, max_width: int, n_masks: int = 1, p: float = 0.5, mask_value: float = 0.0):
+        super().__init__()
+        self.max_width = max_width
+        self.n_masks = n_masks
+        self.p = p
+        self.mask_value = mask_value
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: (B, T, F)
+        if not self.training or torch.rand(()) > self.p or self.max_width <= 0 or self.n_masks <= 0:
+            return x
+
+        if x.dim() != 3:
+            raise ValueError(f"TimeMasking expects (B, T, F), got {x.shape}")
+
+        B, T, F = x.shape
+        out = x.clone()
+
+        for b in range(B):
+            for _ in range(self.n_masks):
+                width = torch.randint(1, self.max_width + 1, (1,)).item()
+                width = min(width, T)  # don’t exceed sequence length
+                start = torch.randint(0, T - width + 1, (1,)).item()
+                out[b, start:start + width, :] = self.mask_value
+
+        return out
+    
 class WhiteNoise(nn.Module):
     def __init__(self, std=0.1):
         super().__init__()
@@ -20,8 +57,8 @@ class MeanDriftNoise(nn.Module):
         self.std = std
 
     def forward(self, x):
-        _, C = x.shape
-        noise = torch.randn(1, C) * self.std
+        _,_, C = x.shape
+        noise = torch.randn(1, 1, C, device=x.device) * self.std
         return x + noise
 
 class GaussianSmoothing(nn.Module):

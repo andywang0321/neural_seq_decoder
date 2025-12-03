@@ -1,5 +1,4 @@
 import os
-os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import pickle
 import time
 
@@ -115,16 +114,6 @@ def trainModel(args):
             dayIdx.to(device),
         )
 
-        # Noise augmentation is faster on GPU
-        if args["whiteNoiseSD"] > 0:
-            X += torch.randn(X.shape, device=device) * args["whiteNoiseSD"]
-
-        if args["constantOffsetSD"] > 0:
-            X += (
-                torch.randn([X.shape[0], 1, X.shape[2]], device=device)
-                * args["constantOffsetSD"]
-            )
-
         # Compute prediction error
         pred = model.forward(X, dayIdx)
 
@@ -231,6 +220,11 @@ def loadModel(modelDir, nInputLayers=24, device="cuda"):
         kernelLen=args["kernelLen"],
         gaussianSmoothWidth=args["gaussianSmoothWidth"],
         bidirectional=args["bidirectional"],
+        whiteNoiseSD=args["whiteNoiseSD"],
+        constantOffsetSD=args["constantOffsetSD"],
+        timeMask_maxWidth=args["timeMask_maxWidth"],
+        timeMask_nMasks=args["timeMask_nMasks"],
+        timeMask_p=args["timeMask_p"],
     ).to(device)
 
     model.load_state_dict(torch.load(modelWeightPath, map_location=device))
