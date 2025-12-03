@@ -21,6 +21,16 @@ uv sync
 ```python
 uv run scripts/train_model.py
 ```
+## Records
+
+starting off with shreeram's hyperparameters, the baseline line model had a PER of 0.286616.
+
+First we try changing the optimizer from Adam to AdamW and reducing the epsilon to 1e-8. These two changes made the steps too large and the model is not able to optimize.
+Then the epsilon was lowered to 0.01. This still did not work and model diverged
+
+Just changing the optimizer to AdamW with original parameters did not decrease the error rate batch 2900, ctc loss: 0.995849, cer: 0.286286, time/batch:   0.159
+
+
 
 ## Contributing
 
