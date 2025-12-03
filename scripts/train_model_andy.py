@@ -26,4 +26,3 @@ args["l2_decay"] = 1e-5
 from neural_decoder.neural_decoder_trainer import trainModel
 
 trainModel(args)
-
