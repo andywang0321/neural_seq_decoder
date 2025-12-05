@@ -32,6 +32,9 @@ BASE_ARGS = {
     "bidirectional": False,
     "l2_decay": 1e-5,
     "eps": 0.1,
+    "timeMask_maxWidth" :0,
+    "timeMask_nMasks":0,
+    "timeMask_p":0
 }
 
 # -------- W&B sweep config ------------
@@ -42,23 +45,22 @@ sweep_config = {
         "goal": "minimize",
     },
     "parameters": {
-        # use a smaller lr when optimizer = adamw by handling it in code below
         "lrStart": {
-            "values": [0.05, 0.02, 0.01],
+            "values": [0.008, 0.012, 0.015, 0.018, 0.022]
+        },
+        "lrEnd": {
+            "values": [1e-5, 3e-5, 1e-4]
         },
         "l2_decay": {
-            "values": [1e-5, 1e-4, 1e-3],
+            "values": [3e-5, 1e-4, 3e-4, 1e-3]
         },
         "eps": {
-            "values": [0.1, 0.01],
-        },
-    },
-    # optional: limit max runs per sweep
-    # "early_terminate": {
-    #     "type": "hyperband",
-    #     "min_iter": 3,
-    # }
+            "values": [1e-4, 1e-3, 1e-2]
+        }
+    }
+
 }
+
 
 
 def sweep_train(config=None):
@@ -73,8 +75,8 @@ def sweep_train(config=None):
         args["eps"] = cfg.eps
         args["outputDir"] = f"{BASE_OUTPUT_DIR}_{time.time}"
         
-        args["lrStart"] = cfg.lrStart * 0.3
-        args["lrEnd"] = args["lrStart"] * (BASE_ARGS["lrEnd"] / BASE_ARGS["lrStart"])
+        args["lrStart"] = cfg.lrStart
+        args["lrEnd"] = cfg.lrEnd
 
         run_name = (
             f"{BASE_MODEL_NAME}"
@@ -97,9 +99,9 @@ if __name__ == "__main__":
     sweep_id = wandb.sweep(
     sweep_config,
     project="neural_decoder",  # or any name you want
-    entity="ali-matthew",   # your username exactly as in the wandb: login message
+    entity="ali-matthew",   
 )
 
 
     # Launch N runs from this machine
-    wandb.agent(sweep_id, function=sweep_train, count=10)
+    wandb.agent(sweep_id, function=sweep_train, count=20)

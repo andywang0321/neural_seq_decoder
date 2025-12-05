@@ -30,6 +30,8 @@ Then the epsilon was lowered to 0.01. This still did not work and model diverged
 
 Just changing the optimizer to AdamW with original parameters did not decrease the error rate batch 2900, ctc loss: 0.995849, cer: 0.286286, time/batch:   0.159
 
+tried time-masking in ebrahim's paper
+
 
 
 ## Contributing

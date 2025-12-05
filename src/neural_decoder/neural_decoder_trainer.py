@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from .model import GRUDecoder
 from .dataset import SpeechDataset
 
+import wandb
 
 def getDatasetLoaders(
     datasetName,
@@ -105,108 +106,113 @@ def trainModel(args):
     )
 
     # --train--
-    testLoss = []
-    testCER = []
-    startTime = time.time()
-    for batch in range(args["nBatch"]):
-        model.train()
+    with wandb.init(
+        project="neural_decoder",
+        entity="ali-matthew",
+        config=args,
+    ) as run:
+        testLoss = []
+        testCER = []
+        startTime = time.time()
+        for batch in range(args["nBatch"]):
+            model.train()
 
-        X, y, X_len, y_len, dayIdx = next(iter(trainLoader))
-        X, y, X_len, y_len, dayIdx = (
-            X.to(device),
-            y.to(device),
-            X_len.to(device),
-            y_len.to(device),
-            dayIdx.to(device),
-        )
+            X, y, X_len, y_len, dayIdx = next(iter(trainLoader))
+            X, y, X_len, y_len, dayIdx = (
+                X.to(device),
+                y.to(device),
+                X_len.to(device),
+                y_len.to(device),
+                dayIdx.to(device),
+            )
 
-        # Compute prediction error
-        pred = model.forward(X, dayIdx)
+            # Compute prediction error
+            pred = model.forward(X, dayIdx)
 
-        loss = loss_ctc(
-            torch.permute(pred.log_softmax(2), [1, 0, 2]),
-            y,
-            ((X_len - model.kernelLen) / model.strideLen).to(torch.int32),
-            y_len,
-        )
-        loss = torch.sum(loss)
+            loss = loss_ctc(
+                torch.permute(pred.log_softmax(2), [1, 0, 2]),
+                y,
+                ((X_len - model.kernelLen) / model.strideLen).to(torch.int32),
+                y_len,
+            )
+            loss = torch.sum(loss)
 
-        # Backpropagation
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
+            # Backpropagation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
 
-        # print(endTime - startTime)
+            # print(endTime - startTime)
 
-        # Eval
-        if batch % 100 == 0:
-            with torch.no_grad():
-                model.eval()
-                allLoss = []
-                total_edit_distance = 0
-                total_seq_length = 0
-                for X, y, X_len, y_len, testDayIdx in testLoader:
-                    X, y, X_len, y_len, testDayIdx = (
-                        X.to(device),
-                        y.to(device),
-                        X_len.to(device),
-                        y_len.to(device),
-                        testDayIdx.to(device),
-                    )
-
-                    pred = model.forward(X, testDayIdx)
-                    loss = loss_ctc(
-                        torch.permute(pred.log_softmax(2), [1, 0, 2]),
-                        y,
-                        ((X_len - model.kernelLen) / model.strideLen).to(torch.int32),
-                        y_len,
-                    )
-                    loss = torch.sum(loss)
-                    allLoss.append(loss.cpu().detach().numpy())
-
-                    adjustedLens = ((X_len - model.kernelLen) / model.strideLen).to(
-                        torch.int32
-                    )
-                    for iterIdx in range(pred.shape[0]):
-                        decodedSeq = torch.argmax(
-                            torch.tensor(pred[iterIdx, 0 : adjustedLens[iterIdx], :]),
-                            dim=-1,
-                        )  # [num_seq,]
-                        decodedSeq = torch.unique_consecutive(decodedSeq, dim=-1)
-                        decodedSeq = decodedSeq.cpu().detach().numpy()
-                        decodedSeq = np.array([i for i in decodedSeq if i != 0])
-
-                        trueSeq = np.array(
-                            y[iterIdx][0 : y_len[iterIdx]].cpu().detach()
+            # Eval
+            if batch % 100 == 0:
+                with torch.no_grad():
+                    model.eval()
+                    allLoss = []
+                    total_edit_distance = 0
+                    total_seq_length = 0
+                    for X, y, X_len, y_len, testDayIdx in testLoader:
+                        X, y, X_len, y_len, testDayIdx = (
+                            X.to(device),
+                            y.to(device),
+                            X_len.to(device),
+                            y_len.to(device),
+                            testDayIdx.to(device),
                         )
 
-                        matcher = SequenceMatcher(
-                            a=trueSeq.tolist(), b=decodedSeq.tolist()
+                        pred = model.forward(X, testDayIdx)
+                        loss = loss_ctc(
+                            torch.permute(pred.log_softmax(2), [1, 0, 2]),
+                            y,
+                            ((X_len - model.kernelLen) / model.strideLen).to(torch.int32),
+                            y_len,
                         )
-                        total_edit_distance += matcher.distance()
-                        total_seq_length += len(trueSeq)
+                        loss = torch.sum(loss)
+                        allLoss.append(loss.cpu().detach().numpy())
 
-                avgDayLoss = np.sum(allLoss) / len(testLoader)
-                cer = total_edit_distance / total_seq_length
+                        adjustedLens = ((X_len - model.kernelLen) / model.strideLen).to(
+                            torch.int32
+                        )
+                        for iterIdx in range(pred.shape[0]):
+                            decodedSeq = torch.argmax(
+                                torch.tensor(pred[iterIdx, 0 : adjustedLens[iterIdx], :]),
+                                dim=-1,
+                            )  # [num_seq,]
+                            decodedSeq = torch.unique_consecutive(decodedSeq, dim=-1)
+                            decodedSeq = decodedSeq.cpu().detach().numpy()
+                            decodedSeq = np.array([i for i in decodedSeq if i != 0])
 
-                endTime = time.time()
-                print(
-                    f"batch {batch}, ctc loss: {avgDayLoss:>7f}, cer: {cer:>7f}, time/batch: {(endTime - startTime)/100:>7.3f}"
-                )
-                startTime = time.time()
+                            trueSeq = np.array(
+                                y[iterIdx][0 : y_len[iterIdx]].cpu().detach()
+                            )
 
-            if len(testCER) > 0 and cer < np.min(testCER):
-                torch.save(model.state_dict(), args["outputDir"] + "/modelWeights")
-            testLoss.append(avgDayLoss)
-            testCER.append(cer)
+                            matcher = SequenceMatcher(
+                                a=trueSeq.tolist(), b=decodedSeq.tolist()
+                            )
+                            total_edit_distance += matcher.distance()
+                            total_seq_length += len(trueSeq)
 
-            tStats = {}
-            tStats["testLoss"] = np.array(testLoss)
-            tStats["testCER"] = np.array(testCER)
+                    avgDayLoss = np.sum(allLoss) / len(testLoader)
+                    cer = total_edit_distance / total_seq_length
 
-            with open(args["outputDir"] + "/trainingStats", "wb") as file:
-                pickle.dump(tStats, file)
+                    endTime = time.time()
+                    print(
+                        f"batch {batch}, ctc loss: {avgDayLoss:>7f}, cer: {cer:>7f}, time/batch: {(endTime - startTime)/100:>7.3f}"
+                    )
+                    startTime = time.time()
+                    run.log({"batch": batch, "ctc loss":avgDayLoss, "per": cer})
+                if len(testCER) > 0 and cer < np.min(testCER):
+                    torch.save(model.state_dict(), args["outputDir"] + "/modelWeights")
+                testLoss.append(avgDayLoss)
+                testCER.append(cer)
+
+                tStats = {}
+                tStats["testLoss"] = np.array(testLoss)
+                tStats["testCER"] = np.array(testCER)
+
+                with open(args["outputDir"] + "/trainingStats", "wb") as file:
+                    pickle.dump(tStats, file)
 
 
 def loadModel(modelDir, nInputLayers=24, device="cuda"):

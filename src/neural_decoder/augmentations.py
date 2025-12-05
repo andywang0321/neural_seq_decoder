@@ -15,7 +15,7 @@ class TimeMasking(nn.Module):
         p: probability of applying this augmentation at all.
         mask_value: what to put in the masked region.
     """
-    def __init__(self, max_width: int, n_masks: int = 1, p: float = 0.5, mask_value: float = 0.0):
+    def __init__(self, max_width: float, n_masks: int = 1, p: float = 0.5, mask_value: float = 0.0):
         super().__init__()
         self.max_width = max_width
         self.n_masks = n_masks
@@ -35,7 +35,7 @@ class TimeMasking(nn.Module):
 
         for b in range(B):
             for _ in range(self.n_masks):
-                width = torch.randint(1, self.max_width + 1, (1,)).item()
+                width = torch.randint(1, int(self.max_width * T) + 1, (1,)).item()
                 width = min(width, T)  # don’t exceed sequence length
                 start = torch.randint(0, T - width + 1, (1,)).item()
                 out[b, start:start + width, :] = self.mask_value
