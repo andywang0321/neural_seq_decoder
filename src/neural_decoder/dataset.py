@@ -39,18 +39,3 @@ class SpeechDataset(Dataset):
             torch.tensor(self.days[idx], dtype=torch.int64),
         )
     
-    def compute_stats(self):
-        feats = []
-
-        for day in range(len(self.data)):
-            for trial in range(len(self.data[day]["sentenceDat"])):
-                x = self.data[day]["sentenceDat"][trial]  # shape (T, C), numpy
-                x = np.log1p(np.clip(x, a_min=0, a_max=None))  # log transform
-                feats.append(x)
-
-        all_feats = np.concatenate(feats, axis=0)  # shape (sum_T, C)
-        mean = all_feats.mean(axis=0)             # (C,)
-        std = all_feats.std(axis=0)               # (C,)
-
-        return torch.tensor(mean, dtype=torch.float32), \
-            torch.tensor(std, dtype=torch.float32)

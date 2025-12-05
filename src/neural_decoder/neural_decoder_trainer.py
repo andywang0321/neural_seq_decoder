@@ -9,9 +9,8 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from .model import GRUDecoder
+from .model import GRUDecoder, LabelSmoothingCTCLoss
 from .dataset import SpeechDataset
-from .augmentations import LogZScore
 import wandb
 
 def getDatasetLoaders(
@@ -35,12 +34,7 @@ def getDatasetLoaders(
         )
 
     train_ds = SpeechDataset(loadedData["train"], transform=None)
-
-    mean, std = train_ds.compute_stats()
-    log_z_transform = LogZScore(mean, std)
-    train_ds.transform = log_z_transform
-
-    test_ds = SpeechDataset(loadedData["test"], transform=log_z_transform)
+    test_ds = SpeechDataset(loadedData["test"])
 
     train_loader = DataLoader(
         train_ds,
@@ -61,7 +55,7 @@ def getDatasetLoaders(
 
     return train_loader, test_loader, loadedData
 
-def trainModel(args):
+def trainModel(args, grad_clip=5.0):
     os.makedirs(args["outputDir"], exist_ok=True)
     torch.manual_seed(args["seed"])
     np.random.seed(args["seed"])
@@ -95,7 +89,7 @@ def trainModel(args):
 
     ).to(device)
 
-    loss_ctc = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
+    loss_ctc = LabelSmoothingCTCLoss(blank=0, smoothing=0.1, reduction="mean", zero_infinity=True)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args["lrStart"],
@@ -145,6 +139,11 @@ def trainModel(args):
             # Backpropagation
             optimizer.zero_grad()
             loss.backward()
+            
+            # !!! gradient clipping
+            if grad_clip > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
             optimizer.step()
             scheduler.step()
 
