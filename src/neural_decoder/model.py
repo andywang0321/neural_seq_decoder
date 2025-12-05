@@ -50,7 +50,7 @@ class GRUDecoder(nn.Module):
         self.timeMask = TimeMasking(
             max_width=timeMask_maxWidth,
             n_masks=timeMask_nMasks,
-            p=timeMask_p,            # you can expose this as arg too
+            p=timeMask_p,           
             mask_value=0.0,
         )
 

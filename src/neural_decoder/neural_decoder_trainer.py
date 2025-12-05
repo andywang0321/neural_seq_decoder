@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from .model import GRUDecoder
 from .dataset import SpeechDataset
-
+from .augmentations import LogZScore
 import wandb
 
 def getDatasetLoaders(
@@ -35,7 +35,12 @@ def getDatasetLoaders(
         )
 
     train_ds = SpeechDataset(loadedData["train"], transform=None)
-    test_ds = SpeechDataset(loadedData["test"])
+
+    mean, std = train_ds.compute_stats()
+    log_z_transform = LogZScore(mean, std)
+    train_ds.transform = log_z_transform
+
+    test_ds = SpeechDataset(loadedData["test"], transform=log_z_transform)
 
     train_loader = DataLoader(
         train_ds,

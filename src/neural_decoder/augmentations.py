@@ -4,6 +4,21 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+class LogZScore(nn.Module):
+    def __init__(self, mean: torch.Tensor, std: torch.Tensor, eps: float = 1e-8):
+        super().__init__()
+        # Ensure 1D (C,) tensors
+        mean = mean.view(-1).float()
+        std = std.view(-1).float()
+
+        self.register_buffer("mean", mean)  # (C,)
+        self.register_buffer("std", std)    # (C,)
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.log1p(torch.clamp(x, min=0.0))
+        return (x - self.mean) / (self.std + self.eps)
+    
 class TimeMasking(nn.Module):
     """
     Randomly masks contiguous time steps in each sequence.
@@ -36,7 +51,7 @@ class TimeMasking(nn.Module):
         for b in range(B):
             for _ in range(self.n_masks):
                 width = torch.randint(1, int(self.max_width * T) + 1, (1,)).item()
-                width = min(width, T)  # don’t exceed sequence length
+                width = min(width, T)  
                 start = torch.randint(0, T - width + 1, (1,)).item()
                 out[b, start:start + width, :] = self.mask_value
 
