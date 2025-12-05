@@ -1,7 +1,7 @@
-modelName = "speechBaseline4"  # andy's configs
+modelName = "convGRU"
 
 args = {}
-args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName + "andy"
+args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName + "uni"
 args["datasetPath"] = "/home/andy/data/brain2speech/ptDecoder_ctc"
 args["seqLen"] = 150
 args["maxTimeSeriesLen"] = 1200
@@ -9,8 +9,8 @@ args["batchSize"] = 128
 args["lrStart"] = 0.05
 args["lrEnd"] = 0.02
 args["nUnits"] = 1024
-args["nBatch"] = 5000
-args["nLayers"] = 5
+args["nBatch"] = 10_000
+args["nLayers"] = 8
 args["seed"] = 0
 args["nClasses"] = 40
 args["nInputFeatures"] = 256
@@ -23,6 +23,6 @@ args["kernelLen"] = 32
 args["bidirectional"] = False
 args["l2_decay"] = 1e-5
 
-from neural_decoder.neural_decoder_trainer import trainModel
+from neural_decoder.conv_gru_trainer import trainModel
 
 trainModel(args)

@@ -1,11 +1,11 @@
-modelName = "speechBaseline4"  # andy's configs
+modelName = "DiphoneGRUDecoderConvFrontend"
 
 args = {}
-args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName + "andy"
+args["outputDir"] = "/home/andy/data/brain2speech/logs/speech_logs/" + modelName
 args["datasetPath"] = "/home/andy/data/brain2speech/ptDecoder_ctc"
 args["seqLen"] = 150
 args["maxTimeSeriesLen"] = 1200
-args["batchSize"] = 128
+args["batchSize"] = 64
 args["lrStart"] = 0.05
 args["lrEnd"] = 0.02
 args["nUnits"] = 1024
@@ -20,9 +20,9 @@ args["constantOffsetSD"] = 0.2
 args["gaussianSmoothWidth"] = 2.0
 args["strideLen"] = 4
 args["kernelLen"] = 32
-args["bidirectional"] = False
+args["bidirectional"] = True
 args["l2_decay"] = 1e-5
 
-from neural_decoder.neural_decoder_trainer import trainModel
+from neural_decoder.conv_gru_diphone_trainer import trainModel
 
 trainModel(args)

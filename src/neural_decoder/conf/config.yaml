@@ -33,3 +33,5 @@ dropout: 0.4
 strideLen: 4
 kernelLen: 32
 bidirectional: True
+
+convDim: 256
