@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 
 from neural_decoder.conv_gru import GRUDecoderConvFrontend  # adjust import path if needed
 from neural_decoder.dataset import SpeechDataset         # adjust import path if needed
+from neural_decoder.loss import LabelSmoothingCTCLoss
 
 
 def getDatasetLoaders(datasetName, batchSize):
@@ -110,9 +111,10 @@ def resume_training(run_dir, extra_batches, output_dir=None, log_every=100, devi
     print(f"Loaded model weights from {weight_path}")
 
     # --- CTC loss, optimizer, scheduler ---
-    loss_ctc = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
+    #loss_ctc = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
+    loss_ctc = LabelSmoothingCTCLoss(blank=0, smoothing=0.1, reduction="mean", zero_infinity=True)
 
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args["lrStart"],
         betas=(0.9, 0.999),
@@ -204,6 +206,9 @@ def resume_training(run_dir, extra_batches, output_dir=None, log_every=100, devi
 
         optimizer.zero_grad()
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+
         optimizer.step()
         scheduler.step()
 

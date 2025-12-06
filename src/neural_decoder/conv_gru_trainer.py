@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from .conv_gru import GRUDecoderConvFrontend
 from .dataset import SpeechDataset
+from .loss import LabelSmoothingCTCLoss
 
 
 def getDatasetLoaders(
@@ -89,7 +90,8 @@ def trainModel(args):
     ).to(device)
 
     loss_ctc = torch.nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
-    optimizer = torch.optim.Adam(
+    loss_ctc = LabelSmoothingCTCLoss(blank=0, reduction="mean", zero_infinity=True, smoothing=0.1)
+    optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args["lrStart"],
         betas=(0.9, 0.999),
@@ -147,6 +149,9 @@ def trainModel(args):
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm(model.parameters(), 5.0)
+
         optimizer.step()
         scheduler.step()
 
